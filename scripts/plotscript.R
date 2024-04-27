@@ -1,11 +1,13 @@
-#This is a script for a gglot2 plot of the data.
-ggplot2::ggplot(data = data, aes(x = x, y = y)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
-  labs(title = "Scatterplot of x and y",
-       x = "x",
-       y = "y") +
-  theme_minimal()
-```
+# Count occurrences of the word "Gaza" in each article
+article_word_count <- lapply(results_list, function(article) {
+  word_count <- sum(grepl("\\bGaza\\b", article$fields$bodyText, ignore.case = TRUE))
+  list(title = article$webTitle, word_count = word_count)
+})
 
-```r
+# Convert to data frame
+word_count_df <- do.call(rbind, article_word_count)
+
+# Create scatterplot
+plot(1:nrow(word_count_df), word_count_df$word_count, 
+     xlab = "Article", ylab = "Word Count of 'Gaza'", 
+     main = "Word Count of 'Gaza' in Articles", pch = 16)
