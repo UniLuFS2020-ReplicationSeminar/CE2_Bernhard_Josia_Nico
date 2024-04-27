@@ -12,8 +12,8 @@ base_url <- "https://content.guardianapis.com/search"
 
 params <- list(
   'api-key' = api_key,
-  'q' = "debate",
-  'tag' = "politics/politics",
+  'q' = "win",
+  'tag' = "sports/sports",
   'from-date' = "2014-01-01",
   'to-date' = "2014-12-31",
   'show-fields' = "all"  # Retrieve all available fields
