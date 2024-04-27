@@ -15,8 +15,9 @@ params <- list(
   'q' = "gaza",
   'from-date' = "2023-01-01",
   'to-date' = "2023-12-31",
-  'show-fields' = "all"  # Retrieve all available fields
-)
+  'show-fields' = "all",  # Retrieve all available fields
+  'page' = 50  # Pagination parameter
+  )
 
 
 response <- GET(base_url, query = params)
