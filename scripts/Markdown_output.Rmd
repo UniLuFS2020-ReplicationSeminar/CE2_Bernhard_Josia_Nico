@@ -1,0 +1,277 @@
+---
+title: "Class Exercise 2"
+author: "Bernhard, Josia, Nico"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+## Load libraries, clear workspace
+
+```{r setup, eval = FALSE}
+rm(list = ls())
+
+library(httr)
+library(jsonlite)
+library(lubridate)
+library(tidyverse)
+```
+
+## The Guardian data extraction
+
+```{r eval = FALSE}
+# load api key and base_url, set to search to find content
+api_key <- rstudioapi::askForPassword("Enter Guardian API Key")
+base_url <- "https://content.guardianapis.com/search"
+
+# define the start and end date, both are chosen as a monday
+start_date <- as.Date("2021-01-01")
+end_date <- as.Date("2024-04-05")
+
+
+# test whether we can get every start and end date of each week for the for loop later
+week_dates <- seq(from = start_date, to = end_date, by = "week")
+
+for(week_start in week_dates) {
+  print(as.Date(week_start))
+  
+  end_date = week_start +7
+  print(as.Date(end_date))
+  cat("\n")
+}
+
+
+# init df to store covid results
+results_covid <- data.frame(WeekStart = as.Date(character()), TotalArticles = integer())
+
+# Loop over each week
+for (week_start in week_dates) {
+
+
+  week_end = week_start + 7
+  
+  # Set up API parameters for the current week
+  params <- list(
+    'api-key' = api_key,
+    'q' = "COVID-19 OR coronavirus",
+    'from-date' = as.character(as.Date(week_start)),
+    'to-date' = as.character(as.Date(week_end))
+  )
+  
+  # Perform the API call
+  response <- GET(base_url, query = params)
+  if (status_code(response) == 200) {
+    content <- content(response, "text")
+    json <- fromJSON(content)
+    total_articles <- json$response$total
+    
+    # Append the results to the dataframe
+    results_covid <- rbind(results_covid, data.frame(WeekStart = as.Date(week_end), TotalArticles = total_articles))
+    
+    # Debug output
+    print(paste("Week starting:", as.Date(week_start), "- Total Articles:", total_articles))
+  } else {
+    print(paste("Failed to retrieve data for week starting:", as.Date(week_start)))
+    
+    
+  }
+  
+  Sys.sleep(abs(rnorm(n = 1, mean = 1.5, sd = 0.4)))
+}  
+
+
+save(results_covid, file = "data/article_counts_covid.RData")
+
+# init df to store russian/ukraine results
+results_russia <- data.frame(WeekStart = as.Date(character()), TotalArticles = integer())
+
+# Loop over each week
+for (week_start in week_dates) {
+  
+  
+  week_end = week_start + 7
+  
+  # Set up API parameters for the current week
+  params <- list(
+    'api-key' = api_key,
+    'q' = "Russia OR Ukraine",
+    'from-date' = as.character(as.Date(week_start)),
+    'to-date' = as.character(as.Date(week_end))
+  )
+  
+  # Perform the API call
+  response <- GET(base_url, query = params)
+  if (status_code(response) == 200) {
+    content <- content(response, "text")
+    json <- fromJSON(content)
+    total_articles <- json$response$total
+    
+    # Append the results to the dataframe
+    results_russia <- rbind(results_russia, data.frame(WeekStart = as.Date(week_end), TotalArticles = total_articles))
+    
+    # Debug output
+    print(paste("Week starting:", as.Date(week_end), "- Total Articles:", total_articles))
+  } else {
+    print(paste("Failed to retrieve data for week starting:", as.Date(week_end)))
+    
+    
+  }
+  
+  Sys.sleep(abs(rnorm(n = 1, mean = 1.5, sd = 0.4)))
+}  
+
+save(results_russia, file = "data/article_counts_russia.RData")
+
+```
+
+## NHS data extraction
+
+
+```{r, eval = FALSE}
+
+url <- "https://api.ukhsa-dashboard.data.gov.uk/themes/infectious_disease/sub_themes/respiratory/topics/COVID-19/geography_types/Nation/geographies/England/metrics"
+
+response <- GET(url)
+content <- content(response, "text")
+json_overview <- fromJSON(content)
+
+
+
+
+# try: COVID-19_cases_rateRollingMean -------------------------------------
+
+url <- "https://api.ukhsa-dashboard.data.gov.uk/themes/infectious_disease/sub_themes/respiratory/topics/COVID-19/geography_types/Nation/geographies/England/metrics/COVID-19_cases_rateRollingMean"
+
+response <- GET(url)
+content <- content(response, "text")
+json <- fromJSON(content)
+
+# this gives us just one datapoint, lets add filters at the end to get more
+
+
+# try to get the weekly deaths for 365 pages ------------------------------
+
+url <- "https://api.ukhsa-dashboard.data.gov.uk/themes/infectious_disease/sub_themes/respiratory/topics/COVID-19/geography_types/Nation/geographies/England/metrics/COVID-19_deaths_ONSRegByWeek?page_size=365"
+
+response <- GET(url)
+content <- content(response, "text")
+json <- fromJSON(content)
+
+# this gives us the covid-19 deaths, but for some reason the data starts in 2021
+
+# lets try the positivity rate, it is weekly aswell -----------------------
+
+url <- "https://api.ukhsa-dashboard.data.gov.uk/themes/infectious_disease/sub_themes/respiratory/topics/COVID-19/geography_types/Nation/geographies/England/metrics/COVID-19_cases_lineagePercentByWeek?page_size=365"
+response <- GET(url)
+content <- content(response, "text")
+json <- fromJSON(content)
+
+# this variables is actually the percentage of the prevalent variants of covid-19, not the positivity rate of tests
+
+
+# lets go back to the deaths and try to get the ones from 2020 ------------
+
+
+url <- "https://api.ukhsa-dashboard.data.gov.uk/themes/infectious_disease/sub_themes/respiratory/topics/COVID-19/geography_types/Nation/geographies/England/metrics/COVID-19_deaths_ONSRegByWeek?year=2020"
+
+response <- GET(url)
+content <- content(response, "text")
+json <- fromJSON(content)
+
+
+
+# to add more filters, we use the params list -----------------------------
+
+base_url_deaths <- "https://api.ukhsa-dashboard.data.gov.uk/themes/infectious_disease/sub_themes/respiratory/topics/COVID-19/geography_types/Nation/geographies/England/metrics/COVID-19_deaths_ONSRegByWeek"
+
+q_params <- list(
+  page_size = 365,
+  year = 2020
+)
+
+response <- GET(base_url_deaths, query = q_params)
+content <- content(response, "text")
+json <- fromJSON(content)
+
+# if i include the year it returns an empty list, maybe they dont have it, or im doing some mistake
+
+
+# get the weekly death starting in 2021 -----------------------------------
+
+base_url_deaths <- "https://api.ukhsa-dashboard.data.gov.uk/themes/infectious_disease/sub_themes/respiratory/topics/COVID-19/geography_types/Nation/geographies/England/metrics/COVID-19_deaths_ONSRegByWeek"
+
+q_params <- list(
+  page_size = 365
+)
+
+response <- GET(base_url_deaths, query = q_params)
+content <- content(response, "text")
+json <- fromJSON(content)
+
+# clean the data, extract the counts and dates ----------------------------
+
+class(json$results)
+
+UK_weekly_death <- json$results
+
+names(UK_weekly_death)
+View(UK_weekly_death)
+
+UK_weekly_death <- UK_weekly_death %>% 
+  select(date, metric_value) %>% 
+  rename(COVID_deaths_UK = metric_value) %>% 
+  mutate(date = as.Date(date)) %>% 
+  rename(WeekStart = date)
+
+sapply(UK_weekly_death, class)
+
+
+save(UK_weekly_death, file = "data/UK_weekly_covid_death.RData")
+```
+
+## Data Analysis 
+
+```{r, eval = FALSE}
+load(file = "data/article_counts_covid.RData")
+load(file = "data/article_counts_russia.RData")
+load(file = "data/UK_weekly_covid_death.RData")
+
+results_covid <- results_covid %>% 
+  rename(Articles_covid19 = TotalArticles)
+
+results_russia <- results_russia %>% 
+  rename(Articles_ukraine_russia = TotalArticles)
+
+df_combined <- left_join(results_covid, results_russia, by = "WeekStart")
+df_comb_covid <- left_join(results_covid, UK_weekly_death, by = "WeekStart")
+
+
+df_long <- df_combined %>%
+  pivot_longer(cols = c(Articles_ukraine_russia, Articles_covid19),
+               names_to = "Variable",
+               values_to = "Count")
+
+
+df_long_covid <- df_comb_covid %>%
+  pivot_longer(cols = c(Articles_covid19, COVID_deaths_UK),
+               names_to = "Variable",
+               values_to = "Count")
+
+
+ggplot(data = df_long, aes(x = WeekStart, y = Count, color = Variable)) +
+  geom_line() +
+  geom_smooth(se = FALSE) +
+  labs(title = "The Guardian Weekly Articles Published \non Ukraine/Russia and COVID-19", x = "Monthly Data", y = "Count", color = "Variable") +
+  scale_color_manual(values = c("Articles_ukraine_russia" = "blue", "Articles_covid19" = "red")) +
+  theme_minimal()
+
+
+ggplot(data = df_long_covid, aes(x = WeekStart, y = Count, color = Variable)) +
+  geom_line() +
+  geom_smooth(se = FALSE) +
+  labs(title = "The Guardian Weekly Articles Published \non COVID-19 and weekly UK COVID-19 deaths", x = "Monthly Data", y = "Count", color = "Variable") +
+  scale_color_manual(values = c("Articles_ukraine_russia" = "blue", "COVID_deaths_UK" = "red")) +
+  theme_minimal()
+
+
+
+```
