@@ -4,6 +4,8 @@ rm(list = ls())
 
 library(tidyverse)
 
+# this is a new branch
+
 load(file = "data/article_counts_covid.RData")
 load(file = "data/article_counts_russia.RData")
 
