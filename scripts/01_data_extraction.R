@@ -12,8 +12,8 @@ api_key <- rstudioapi::askForPassword("Enter Guardian API Key")
 base_url <- "https://content.guardianapis.com/search"
 
 # define the start and end date, both are chosen as a monday
-start_date <- as.Date("2021-01-08")
-end_date <- as.Date("2024-04-12")
+start_date <- as.Date("2021-01-01")
+end_date <- as.Date("2024-04-05")
 
 
 # test whether we can get every start and end date of each week for the for loop later
@@ -53,7 +53,7 @@ for (week_start in week_dates) {
     total_articles <- json$response$total
     
     # Append the results to the dataframe
-    results_covid <- rbind(results_covid, data.frame(WeekStart = as.Date(week_start), TotalArticles = total_articles))
+    results_covid <- rbind(results_covid, data.frame(WeekStart = as.Date(week_end), TotalArticles = total_articles))
     
     # Debug output
     print(paste("Week starting:", as.Date(week_start), "- Total Articles:", total_articles))
@@ -94,12 +94,12 @@ for (week_start in week_dates) {
     total_articles <- json$response$total
     
     # Append the results to the dataframe
-    results_russia <- rbind(results_russia, data.frame(WeekStart = as.Date(week_start), TotalArticles = total_articles))
+    results_russia <- rbind(results_russia, data.frame(WeekStart = as.Date(week_end), TotalArticles = total_articles))
     
     # Debug output
-    print(paste("Week starting:", as.Date(week_start), "- Total Articles:", total_articles))
+    print(paste("Week starting:", as.Date(week_end), "- Total Articles:", total_articles))
   } else {
-    print(paste("Failed to retrieve data for week starting:", as.Date(week_start)))
+    print(paste("Failed to retrieve data for week starting:", as.Date(week_end)))
     
     
   }
