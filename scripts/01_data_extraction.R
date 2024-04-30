@@ -12,8 +12,8 @@ api_key <- rstudioapi::askForPassword("Enter Guardian API Key")
 base_url <- "https://content.guardianapis.com/search"
 
 # define the start and end date, both are chosen as a monday
-start_date <- as.Date("2019-09-06")
-end_date <- as.Date("2022-09-05")
+start_date <- as.Date("2021-01-08")
+end_date <- as.Date("2024-04-12")
 
 
 # test whether we can get every start and end date of each week for the for loop later
