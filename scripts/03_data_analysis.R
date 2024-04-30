@@ -30,20 +30,34 @@ df_long_covid <- df_comb_covid %>%
                values_to = "Count")
 
 
-ggplot(data = df_long, aes(x = WeekStart, y = Count, color = Variable)) +
+p1 <- ggplot(data = df_long, aes(x = WeekStart, y = Count, color = Variable)) +
   geom_line() +
   geom_smooth(se = FALSE) +
   labs(title = "The Guardian Weekly Articles Published \non Ukraine/Russia and COVID-19", x = "Monthly Data", y = "Count", color = "Variable") +
   scale_color_manual(values = c("Articles_ukraine_russia" = "blue", "Articles_covid19" = "red")) +
   theme_minimal()
 
+ggsave(p1,
+       filename = here::here("output", "articles.png"),
+       device = "png",
+       width = 6, height = 4, units = "in",
+       dpi = 600)
 
-ggplot(data = df_long_covid, aes(x = WeekStart, y = Count, color = Variable)) +
+
+p2<- ggplot(data = df_long_covid, aes(x = WeekStart, y = Count, color = Variable)) +
   geom_line() +
   geom_smooth(se = FALSE) +
   labs(title = "The Guardian Weekly Articles Published \non COVID-19 and weekly UK COVID-19 deaths", x = "Monthly Data", y = "Count", color = "Variable") +
   scale_color_manual(values = c("Articles_ukraine_russia" = "blue", "COVID_deaths_UK" = "red")) +
   theme_minimal()
+
+ggsave(p2,
+       filename = here::here("output", "covid.png"),
+       device = "png",
+       width = 6, height = 4, units = "in",
+       dpi = 600)
+
+
 
 
 
