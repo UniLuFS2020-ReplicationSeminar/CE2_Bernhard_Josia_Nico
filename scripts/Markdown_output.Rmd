@@ -4,8 +4,24 @@ author: "Bernhard, Josia, Nico"
 date: "`r Sys.Date()`"
 output: html_document
 ---
+# Number of Articles in the Guardian on Covid-19 and the Russian Invasion of Ukraine
 
-## Load libraries, clear workspace
+This is the Class exercise 2 of Bernhard, Nico and Josia for the Data Mining in R class of spring 2024.
+
+## Tasks
+1) Register to the Guardian API and get the API key. 
+2) Create a corpus of articles of choice following your instinct and interests.
+3) Once you created your corpus, make a basic application of choice. 
+
+## Hypothesis
+The decline of articles on the topic of covid-19 goes along with a rise in articles on the topic of the russian invasion on Ukraine and with a decline of deaths of covid-19 in the UK.
+
+## Method
+We will use the Guardian API to extract the number of articles published on the topics of COVID-19 and the Russian invasion of Ukraine. We will then compare the number of articles published on these topics over time. As an extra we will add the weekly deaths in the UK due to COVID-19 to the analysis, which we will extract from the UK National Health Security Agency (NHS) API.
+
+## Code
+
+### Load libraries, clear workspace
 
 ```{r setup, eval = FALSE}
 rm(list = ls())
@@ -16,7 +32,7 @@ library(lubridate)
 library(tidyverse)
 ```
 
-## The Guardian data extraction
+### The Guardian data extraction
 
 ```{r eval = FALSE}
 # load api key and base_url, set to search to find content
@@ -124,7 +140,6 @@ save(results_russia, file = "data/article_counts_russia.RData")
 ```
 
 ## NHS data extraction
-
 
 ```{r, eval = FALSE}
 
@@ -257,7 +272,7 @@ df_long_covid <- df_comb_covid %>%
                values_to = "Count")
 
 
-ggplot(data = df_long, aes(x = WeekStart, y = Count, color = Variable)) +
+plot_articles <- ggplot(data = df_long, aes(x = WeekStart, y = Count, color = Variable)) +
   geom_line() +
   geom_smooth(se = FALSE) +
   labs(title = "The Guardian Weekly Articles Published \non Ukraine/Russia and COVID-19", x = "Monthly Data", y = "Count", color = "Variable") +
@@ -265,13 +280,35 @@ ggplot(data = df_long, aes(x = WeekStart, y = Count, color = Variable)) +
   theme_minimal()
 
 
-ggplot(data = df_long_covid, aes(x = WeekStart, y = Count, color = Variable)) +
+plot_covid <- ggplot(data = df_long_covid, aes(x = WeekStart, y = Count, color = Variable)) +
   geom_line() +
   geom_smooth(se = FALSE) +
   labs(title = "The Guardian Weekly Articles Published \non COVID-19 and weekly UK COVID-19 deaths", x = "Monthly Data", y = "Count", color = "Variable") +
   scale_color_manual(values = c("Articles_ukraine_russia" = "blue", "COVID_deaths_UK" = "red")) +
   theme_minimal()
 
+```
 
+## Plots
+
+```{r, eval = FALSE}
+
+print(plot_articles)
+print(plot_covid)
 
 ```
+
+## Results and Discussion
+ 
+The data shows that the number of articles published on the topics of COVID-19 and the Russian invasion of Ukraine have been fluctuating over time. The number of articles published on COVID-19 has been decreasing over time, while the number of articles published on the Russian invasion of Ukraine has been increasing. The number of weekly deaths in the UK due to COVID-19 has also been decreasing over time. 
+
+Interestingly, there is an overlap between the increase in the number of articles published on the Russian invasion of Ukraine and the decrease in the number of articles published on COVID-19. This suggests that the decrease in the number of articles published on COVID-19 may be related to the increase in the number of articles published on the Russian invasion of Ukraine.
+
+Furthermore, there is an overlap between the decrease in the number of articles published on COVID-19 and the decrease in the number of weekly deaths in the UK due to COVID-19. This suggests that the decrease in the number of articles published on COVID-19 may be related to the decrease in the number of weekly deaths in the UK due to COVID-19.
+
+## Conclusion
+
+Overall, the data suggests that the number of articles published on COVID-19 and the Russian invasion of Ukraine may be related to each other and to the number of weekly deaths in the UK due to COVID-19. Further analysis is needed to determine the exact nature of these relationships.
+
+
+
