@@ -6,6 +6,8 @@ rm(list = ls())
 library(httr)
 library(jsonlite)
 library(lubridate)
+
+# added this library
 library(guardianapi)
 
 # load api key and base_url, set to search to find content
