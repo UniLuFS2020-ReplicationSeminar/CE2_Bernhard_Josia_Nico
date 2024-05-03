@@ -4,14 +4,9 @@ author: "Bernhard, Josia, Nico"
 date: "`r Sys.Date()`"
 output: html_document
 ---
-# Number of Articles in the Guardian on Covid-19 and the Russian Invasion of Ukraine
+# Number of Articles in the Guardian on COVID-19 and the Russian Invasion of Ukraine
 
 This is the Class exercise 2 of Bernhard, Nico and Josia for the Data Mining in R class of spring 2024.
-
-## Tasks
-1) Register to the Guardian API and get the API key. 
-2) Create a corpus of articles of choice following your instinct and interests.
-3) Once you created your corpus, make a basic application of choice. 
 
 ## Introduction
 Since our attention became the product of many companies, companies started competing for it. The news industry is not freed of this competition, because the decline of subscription-based business models has lead to a rise of advertisement-based business models, which are dependent on the quantity of clicks. The more serious newspapers find themselves in a double and potentially conflicting role, with The Guardian having the mission statement: "to use clarity and imagination to build hope", but also having to compete for attention, with research proving that negativity drives online news consumption (Robertson et al., 2023).
@@ -22,13 +17,12 @@ The research objective of this class exercise is to analyze on whether The Guard
 We used the Guardian API to extract the number of articles published per week on the topics of COVID-19 and the Russian invasion of Ukraine. The time period stretches from the 8th of January 2021 to the 12th of April 2024. We will then compare the number of articles published on these topics over time. To model the severity of COVID-19 in the UK, and whether it correlates with the number of articles published on the topic, we added the weekly deaths in the UK due to COVID-19 to the analysis, which we extracted from the UK National Health Security Agency (NHS) API.
 
 ## Hypothesis
-The decline of articles on the topic of covid-19 goes along with a rise in articles on the topic of the russian invasion on Ukraine and with a decline of deaths of covid-19 in the UK.
+The decline of articles on the topic of COVID-19 goes along with a rise in articles on the topic of the russian invasion on Ukraine and with a decline of deaths of COVID-19 in the UK.
 
-## Code
 
 ### Load libraries, clear workspace
 
-```{r setup, eval = FALSE}
+```{r setup, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
 rm(list = ls())
 
 library(httr)
@@ -48,7 +42,7 @@ opts_knit$set(root.dir = normalizePath(".."))
 
 
 
-```{r eval = FALSE}
+```{r}
 
 if(!file.exists("data/article_counts_covid.RData")) {
 
@@ -176,7 +170,7 @@ summary(results_russia)
 
 ## NHS data extraction
 
-```{r, eval = FALSE}
+```{r}
 
 if(!file.exists("data/UK_weekly_covid_death.RData")) {
 
@@ -289,7 +283,7 @@ summary(UK_weekly_death)
 
 ## Data Cleaning and Plots
 
-```{r, eval = FALSE}
+```{r}
 
 results_covid_renamed <- results_covid %>% 
   rename(Articles_covid19 = TotalArticles)
@@ -356,7 +350,7 @@ df_long_covid_scaled <- df_comb_covid_scaled %>%
 
 p3 <- ggplot(data = df_long_covid_scaled, aes(x = WeekStart, y = Count, color = Variable)) +
   geom_line() +
-  labs(title = "The Guardian Weekly Articles Published \non COVID-19 and Weekly UK COVID-19 Deaths with Scaling", x = "Monthly Data", y = "Standardized Count", color = "Variable") +
+  labs(title = "The Guardian Weekly Articles Published \non COVID-19 and Weekly UK COVID-19 Deaths Standardized", x = "Monthly Data", y = "Standardized Count", color = "Variable") +
   scale_color_manual(values = c("COVID_deaths_UK" = "blue", "Articles_covid19" = "red")) +
   theme_minimal()
 
