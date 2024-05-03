@@ -13,11 +13,16 @@ This is the Class exercise 2 of Bernhard, Nico and Josia for the Data Mining in 
 2) Create a corpus of articles of choice following your instinct and interests.
 3) Once you created your corpus, make a basic application of choice. 
 
+## Introduction
+Since our attention became the product of many companies, companies started competing for it. The news industry is not freed of this competition, because the decline of subscription-based business models has lead to a rise of advertisement-based business models, which are dependent on the quantity of clicks. The more serious newspapers find themselves in a double and potentially conflicting role, with The Guardian having the mission statement: "to use clarity and imagination to build hope", but also having to compete for attention, with research proving that negativity drives online news consumption (Robertson et al., 2023).
+The research objective of this class exercise is to analyze on whether The Guardian articles published on COVID-19 reduced dramatically with the Russian invasion of Ukraine, which might imply that The Guardian jumped from one crisis to the next one.
+
+
+## Methods
+We used the Guardian API to extract the number of articles published per week on the topics of COVID-19 and the Russian invasion of Ukraine. The time period stretches from the 8th of January 2021 to the 12th of April 2024. We will then compare the number of articles published on these topics over time. To model the severity of COVID-19 in the UK, and whether it correlates with the number of articles published on the topic, we added the weekly deaths in the UK due to COVID-19 to the analysis, which we extracted from the UK National Health Security Agency (NHS) API.
+
 ## Hypothesis
 The decline of articles on the topic of covid-19 goes along with a rise in articles on the topic of the russian invasion on Ukraine and with a decline of deaths of covid-19 in the UK.
-
-## Method
-We will use the Guardian API to extract the number of articles published on the topics of COVID-19 and the Russian invasion of Ukraine. We will then compare the number of articles published on these topics over time. As an extra we will add the weekly deaths in the UK due to COVID-19 to the analysis, which we will extract from the UK National Health Security Agency (NHS) API.
 
 ## Code
 
@@ -30,11 +35,25 @@ library(httr)
 library(jsonlite)
 library(lubridate)
 library(tidyverse)
+library(knitr)
+
+
+# change the wd to one hierarchy higher because for some reason it was in scripts for the .rmd file
+opts_knit$set(root.dir = normalizePath(".."))
+
 ```
 
 ### The Guardian data extraction
 
+
+
+
 ```{r eval = FALSE}
+
+if(!file.exists("data/article_counts_covid.RData")) {
+
+  
+  
 # load api key and base_url, set to search to find content
 api_key <- rstudioapi::askForPassword("Enter Guardian API Key")
 base_url <- "https://content.guardianapis.com/search"
@@ -97,6 +116,14 @@ for (week_start in week_dates) {
 
 save(results_covid, file = "data/article_counts_covid.RData")
 
+} else {
+load(file = "data/article_counts_covid.RData")
+}
+
+
+if(!file.exists("data/article_counts_russia.RData")) {
+
+
 # init df to store russian/ukraine results
 results_russia <- data.frame(WeekStart = as.Date(character()), TotalArticles = integer())
 
@@ -137,11 +164,21 @@ for (week_start in week_dates) {
 
 save(results_russia, file = "data/article_counts_russia.RData")
 
+} else {
+  load(file = "data/article_counts_russia.RData")
+}
+
+
+summary(results_covid)
+summary(results_russia)
+
 ```
 
 ## NHS data extraction
 
 ```{r, eval = FALSE}
+
+if(!file.exists("data/UK_weekly_covid_death.RData")) {
 
 url <- "https://api.ukhsa-dashboard.data.gov.uk/themes/infectious_disease/sub_themes/respiratory/topics/COVID-19/geography_types/Nation/geographies/England/metrics"
 
@@ -241,23 +278,27 @@ sapply(UK_weekly_death, class)
 
 
 save(UK_weekly_death, file = "data/UK_weekly_covid_death.RData")
+
+
+} else {
+    load(file = "data/UK_weekly_covid_death.RData")
+}
+
+summary(UK_weekly_death)
 ```
 
-## Data Analysis 
+## Data Cleaning and Plots
 
 ```{r, eval = FALSE}
-load(file = "data/article_counts_covid.RData")
-load(file = "data/article_counts_russia.RData")
-load(file = "data/UK_weekly_covid_death.RData")
 
-results_covid <- results_covid %>% 
+results_covid_renamed <- results_covid %>% 
   rename(Articles_covid19 = TotalArticles)
 
-results_russia <- results_russia %>% 
+results_russia_renamed <- results_russia %>% 
   rename(Articles_ukraine_russia = TotalArticles)
 
-df_combined <- left_join(results_covid, results_russia, by = "WeekStart")
-df_comb_covid <- left_join(results_covid, UK_weekly_death, by = "WeekStart")
+df_combined <- left_join(results_covid_renamed, results_russia_renamed, by = "WeekStart")
+df_comb_covid <- left_join(results_covid_renamed, UK_weekly_death, by = "WeekStart")
 
 
 df_long <- df_combined %>%
@@ -265,6 +306,7 @@ df_long <- df_combined %>%
                names_to = "Variable",
                values_to = "Count")
 
+  
 
 df_long_covid <- df_comb_covid %>%
   pivot_longer(cols = c(Articles_covid19, COVID_deaths_UK),
@@ -272,39 +314,75 @@ df_long_covid <- df_comb_covid %>%
                values_to = "Count")
 
 
-plot_articles <- ggplot(data = df_long, aes(x = WeekStart, y = Count, color = Variable)) +
+p1 <-ggplot(data = df_long, aes(x = WeekStart, y = Count, color = Variable)) +
   geom_line() +
-  geom_smooth(se = FALSE) +
   labs(title = "The Guardian Weekly Articles Published \non Ukraine/Russia and COVID-19", x = "Monthly Data", y = "Count", color = "Variable") +
   scale_color_manual(values = c("Articles_ukraine_russia" = "blue", "Articles_covid19" = "red")) +
   theme_minimal()
 
+ggsave(p1,
+       filename = here::here("output", "articles.png"),
+       device = "png",
+       width = 6, height = 4, units = "in",
+       dpi = 600)
 
-plot_covid <- ggplot(data = df_long_covid, aes(x = WeekStart, y = Count, color = Variable)) +
+p2 <- ggplot(data = df_long_covid, aes(x = WeekStart, y = Count, color = Variable)) +
   geom_line() +
-  geom_smooth(se = FALSE) +
-  labs(title = "The Guardian Weekly Articles Published \non COVID-19 and weekly UK COVID-19 deaths", x = "Monthly Data", y = "Count", color = "Variable") +
-  scale_color_manual(values = c("Articles_ukraine_russia" = "blue", "COVID_deaths_UK" = "red")) +
+  labs(title = "The Guardian Weekly Articles Published \non COVID-19 and Weekly UK COVID-19 Deaths", x = "Monthly Data", y = "Count", color = "Variable") +
+  scale_color_manual(values = c("COVID_deaths_UK" = "blue", "Articles_covid19" = "red")) +
   theme_minimal()
 
+ggsave(p2,
+       filename = here::here("output", "covid.png"),
+       device = "png",
+       width = 6, height = 4, units = "in",
+       dpi = 600)
+
+
+# Since the COVID-19 deaths and COVID-19 articles have different units, we scale and center the variables for plotting
+
+
+df_comb_covid_scaled <- df_comb_covid %>% 
+  mutate(Articles_covid19 = scale(as.numeric(Articles_covid19))) %>% 
+  mutate(COVID_deaths_UK = scale(as.numeric(COVID_deaths_UK)))
+
+
+df_long_covid_scaled <- df_comb_covid_scaled %>%
+  pivot_longer(cols = c(Articles_covid19, COVID_deaths_UK),
+               names_to = "Variable",
+               values_to = "Count")
+
+
+
+p3 <- ggplot(data = df_long_covid_scaled, aes(x = WeekStart, y = Count, color = Variable)) +
+  geom_line() +
+  labs(title = "The Guardian Weekly Articles Published \non COVID-19 and Weekly UK COVID-19 Deaths with Scaling", x = "Monthly Data", y = "Standardized Count", color = "Variable") +
+  scale_color_manual(values = c("COVID_deaths_UK" = "blue", "Articles_covid19" = "red")) +
+  theme_minimal()
+
+ggsave(p3,
+       filename = here::here("output", "covid_scaled.png"),
+       device = "png",
+       width = 6, height = 4, units = "in",
+       dpi = 600)
+
+p1
+p2
+p3
+
 ```
 
-## Plots
-
-```{r, eval = FALSE}
-
-print(plot_articles)
-print(plot_covid)
-
-```
 
 ## Results and Discussion
  
-The data shows that the number of articles published on the topics of COVID-19 and the Russian invasion of Ukraine have been fluctuating over time. The number of articles published on COVID-19 has been decreasing over time, while the number of articles published on the Russian invasion of Ukraine has been increasing. The number of weekly deaths in the UK due to COVID-19 has also been decreasing over time. 
+The data shows that the number of articles published on the topics of COVID-19 and the Russian invasion of Ukraine have been fluctuating over time. The number of articles published on COVID-19 has been decreasing over time, while the number of articles published on the Russian invasion of Ukraine spiked at the invasion and has been tapering off ever since. The weekly UK COVID-19 deaths were very large at the start of the collecting period, and has decreased since then. 
 
-Interestingly, there is an overlap between the increase in the number of articles published on the Russian invasion of Ukraine and the decrease in the number of articles published on COVID-19. This suggests that the decrease in the number of articles published on COVID-19 may be related to the increase in the number of articles published on the Russian invasion of Ukraine.
+Interestingly, there is an overlap between the increase in the number of articles published on the Russian invasion of Ukraine and the decrease in the number of articles published on COVID-19 in the first half of 2022. This suggests that the number of articles published on COVID-19 might be negatively correlated with the number of articles published in the Russian invasion of Ukraine.
 
 Furthermore, there is an overlap between the decrease in the number of articles published on COVID-19 and the decrease in the number of weekly deaths in the UK due to COVID-19. This suggests that the decrease in the number of articles published on COVID-19 may be related to the decrease in the number of weekly deaths in the UK due to COVID-19.
+
+Limitations
+We could not manage to do statistical testing on our time series data. Therefore, we cannot formally reject the null hypothesis, which would be no correlation between the number of COVID-19 articles and the number of articles on the Russion invasion of Ukraine.
 
 ## Conclusion
 
